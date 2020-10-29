@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/go-vela/types/constants"
 
@@ -223,11 +222,10 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 
 	// <-------------------- Testing -------------------->
 
-	// sleep for 1 second
-	time.Sleep(1 * time.Second)
-
-	// directly copy container logs to stdout
-	_, err = io.Copy(os.Stdout, logs)
+	// directly copy container stdout and stderr logs to stdout
+	//
+	// https://godoc.org/github.com/docker/docker/pkg/stdcopy#StdCopy
+	_, err = stdcopy.StdCopy(os.Stdout, os.Stdout, logs)
 	if err != nil {
 		return nil, err
 	}
