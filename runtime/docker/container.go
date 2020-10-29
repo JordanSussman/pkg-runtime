@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-vela/types/constants"
 
@@ -220,10 +221,18 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 		return nil, err
 	}
 
+	// <-------------------- Testing -------------------->
+
+	// sleep for 1 second
+	time.Sleep(1 * time.Second)
+
+	// directly copy container logs to stdout
 	_, err = io.Copy(os.Stdout, logs)
 	if err != nil {
 		return nil, err
 	}
+
+	// <---------------- End Of Testing ---------------->
 
 	// create in-memory pipe for capturing logs
 	rc, wc := io.Pipe()
