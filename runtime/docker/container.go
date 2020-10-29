@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/go-vela/types/constants"
@@ -215,6 +216,11 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 	//
 	// https://godoc.org/github.com/docker/docker/client#Client.ContainerLogs
 	logs, err := c.docker.ContainerLogs(ctx, ctn.ID, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.Copy(os.Stdout, logs)
 	if err != nil {
 		return nil, err
 	}
