@@ -222,10 +222,10 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 
 	// <-------------------- Testing -------------------->
 
-	// directly copy container stdout and stderr logs to stdout
+	// directly copy container stdout and stderr logs to OS stdout and stderr
 	//
 	// https://godoc.org/github.com/docker/docker/pkg/stdcopy#StdCopy
-	_, err = stdcopy.StdCopy(os.Stdout, os.Stdout, logs)
+	_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, logs)
 	if err != nil {
 		return nil, err
 	}
