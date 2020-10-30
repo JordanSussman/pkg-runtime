@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/go-vela/types/constants"
 
@@ -221,21 +220,6 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 		return nil, err
 	}
 
-	// <-------------------- Testing -------------------->
-
-	// sleep for 1 second
-	time.Sleep(1 * time.Second)
-
-	// directly copy container stdout and stderr logs to OS stdout and stderr
-	//
-	// https://godoc.org/github.com/docker/docker/pkg/stdcopy#StdCopy
-	_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, logs)
-	if err != nil {
-		return nil, err
-	}
-
-	// <---------------- End Of Testing ---------------->
-
 	// create in-memory pipe for capturing logs
 	rc, wc := io.Pipe()
 
@@ -254,6 +238,18 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 			// close in-memory pipe read closer
 			rc.Close()
 		}()
+
+		// <-------------------- Testing -------------------->
+
+		// directly copy container stdout and stderr logs to OS stdout and stderr
+		//
+		// https://godoc.org/github.com/docker/docker/pkg/stdcopy#StdCopy
+		_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, logs)
+		if err != nil {
+			logrus.Errorf("unable to copy logs for container: %v", err)
+		}
+
+		// <---------------- End Of Testing ---------------->
 
 		// copy container stdout and stderr logs to our in-memory pipe
 		//
