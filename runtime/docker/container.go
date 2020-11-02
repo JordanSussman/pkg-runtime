@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/go-vela/types/constants"
@@ -201,37 +200,13 @@ func (c *client) SetupContainer(ctx context.Context, ctn *pipeline.Container) er
 func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io.ReadCloser, error) {
 	logrus.Tracef("tailing output for container %s", ctn.ID)
 
-	// create options for capturing container logs
-	//
-	// https://godoc.org/github.com/docker/docker/api/types#ContainerLogsOptions
-	opts := types.ContainerLogsOptions{
-		Follow:     true,
-		ShowStdout: true,
-		ShowStderr: true,
-		Details:    false,
-		Timestamps: false,
-	}
-
-	// send API call to capture the container logs
-	//
-	// https://godoc.org/github.com/docker/docker/client#Client.ContainerLogs
-	logs, err := c.docker.ContainerLogs(ctx, ctn.ID, opts)
-	if err != nil {
-		return nil, err
-	}
-
 	// create in-memory pipe for capturing logs
 	rc, wc := io.Pipe()
-
-	logrus.Tracef("copying logs for container %s", ctn.ID)
 
 	// capture all stdout and stderr logs
 	go func() {
 		// defer closing all buffers
 		defer func() {
-			// close logs buffer
-			logs.Close()
-
 			// close in-memory pipe write closer
 			wc.Close()
 
@@ -239,7 +214,16 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 			rc.Close()
 		}()
 
-		// <-------------------- Testing -------------------->
+		// create options for capturing container logs
+		//
+		// https://godoc.org/github.com/docker/docker/api/types#ContainerLogsOptions
+		opts := types.ContainerLogsOptions{
+			Follow:     true,
+			ShowStdout: true,
+			ShowStderr: true,
+			Details:    false,
+			Timestamps: false,
+		}
 
 		// send API call to capture the container logs
 		//
@@ -249,15 +233,7 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 			logrus.Errorf("unable to capture logs for container: %v", err)
 		}
 
-		// directly copy container stdout and stderr logs to OS stdout and stderr
-		//
-		// https://godoc.org/github.com/docker/docker/pkg/stdcopy#StdCopy
-		_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, logs)
-		if err != nil {
-			logrus.Errorf("unable to copy logs for container: %v", err)
-		}
-
-		// <---------------- End Of Testing ---------------->
+		logrus.Tracef("copying logs for container %s", ctn.ID)
 
 		// copy container stdout and stderr logs to our in-memory pipe
 		//
@@ -266,6 +242,9 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 		if err != nil {
 			logrus.Errorf("unable to copy logs for container: %v", err)
 		}
+
+		// close logs buffer
+		logs.Close()
 	}()
 
 	return rc, nil
