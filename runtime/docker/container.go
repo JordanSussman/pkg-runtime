@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/go-vela/types/constants"
 
@@ -205,6 +206,9 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 
 	// capture all stdout and stderr logs
 	go func() {
+		// sleep for 1 second
+		time.Sleep(1 * time.Second)
+
 		// create options for capturing container logs
 		//
 		// https://godoc.org/github.com/docker/docker/api/types#ContainerLogsOptions
