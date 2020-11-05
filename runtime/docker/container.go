@@ -198,27 +198,6 @@ func (c *client) SetupContainer(ctx context.Context, ctn *pipeline.Container) er
 
 // TailContainer captures the logs for the pipeline container.
 func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io.ReadCloser, error) {
-	for {
-		// send API call to inspect the container
-		//
-		// https://godoc.org/github.com/docker/docker/client#Client.ContainerInspect
-		container, err := c.docker.ContainerInspect(ctx, ctn.ID)
-		if err != nil {
-			logrus.Errorf("unable to inspect container %s", ctn.ID)
-		}
-
-		// check if the container is in a running or exited status
-		//
-		// https://godoc.org/github.com/docker/docker/api/types#ContainerState
-		if strings.EqualFold(container.State.Status, "running") ||
-			strings.EqualFold(container.State.Status, "exited") {
-			// break so we start tailing container logs
-			break
-		}
-
-		logrus.Tracef("container %s is in a %s state; skipping tail of output", ctn.ID, container.State.Status)
-	}
-
 	logrus.Tracef("tailing output for container %s", ctn.ID)
 
 	// create options for capturing container logs
@@ -242,8 +221,6 @@ func (c *client) TailContainer(ctx context.Context, ctn *pipeline.Container) (io
 
 	// create in-memory pipe for capturing logs
 	rc, wc := io.Pipe()
-
-	logrus.Tracef("copying logs for container %s", ctn.ID)
 
 	// capture all stdout and stderr logs
 	go func() {
